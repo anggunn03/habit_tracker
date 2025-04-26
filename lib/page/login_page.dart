@@ -1,62 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:habit_tracker/page/home_screen.dart';
+import 'package:habit_tracker/page/habit_page.dart';
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  bool isLoading = false;
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _email = TextEditingController();
+  final TextEditingController _password = TextEditingController();
+  bool _loading = false;
 
-  Future<void> login() async {
-    final email = emailController.text;
-    final password = passwordController.text;
+  Future<void> _login() async {
+    setState(() => _loading = true);
+    final res = await Supabase.instance.client.auth.signInWithPassword(
+      email: _email.text.trim(),
+      password: _password.text.trim(),
+    );
+    setState(() => _loading = false);
 
-  if (email.isEmpty || password.isEmpty) {
+    if (res.session != null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const HabitTrackerPage()),
+      );
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email dan password tidak boleh kosong')),
+        const SnackBar(content: Text('Login gagal')),
       );
-      return;
     }
-
-    setState(() => isLoading = true);
-
-   try {
-      final res = await Supabase.instance.client.auth.signInWithPassword(
-        email: email,
-        password: password,
-      );
-
-      if (res.session != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Login gagal. Periksa email dan password Anda.')),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Login gagal: $e')),
-      );
-    } finally {
-      setState(() => isLoading = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.dispose();
   }
 
   @override
@@ -66,35 +41,27 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center, // Pusatkan konten di tengah layar
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             TextField(
-              controller: emailController,
+              controller: _email,
               decoration: const InputDecoration(labelText: 'Email'),
             ),
-// Jarak antara input email dan password
             TextField(
-              controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
+              controller: _password,
               obscureText: true,
+              decoration: const InputDecoration(labelText: 'Password'),
             ),
-            
- // Jarak antara input password dan tombol login
+            const SizedBox(height: 20),
             ElevatedButton(
-            onPressed: isLoading ? null : login, // Nonaktifkan tombol saat loading
-            child: isLoading
-                ? const SizedBox(
-
-                    child: CircularProgressIndicator(
-
-                      color: Colors.white, // Warna indikator loading
-                    ),
-                  )
-                : const Text('Login'),
-          ),
-        ],
+              onPressed: _loading ? null : _login,
+              child: _loading
+                  ? const CircularProgressIndicator()
+                  : const Text('Login'),
+            )
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
