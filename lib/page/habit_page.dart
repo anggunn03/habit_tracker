@@ -39,35 +39,22 @@ class _HabitTrackerPageState extends State<HabitTrackerPage> {
     setState(() => _loading = true);
 
     try {
-      final res = await supabase
-          .from('habits')
-          .select()
-          .eq('user_id', userId)
-          .order('name')
-          .execute();
-
-      if (res.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal memuat data: ${res.error!.message}')),
-        );
-        return;
-      }
-
-      if (res.data == null || res.data is! List) {
-        throw Exception('Data yang diterima tidak valid.');
-      }
-
+    final data = await supabase
+        .from('habits')
+        .select()
+        .eq('user_id', userId)
+        .order('name');
       setState(() {
-        _habits = List<Map<String, dynamic>>.from(res.data);
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Terjadi kesalahan: $e')),
-      );
-    } finally {
-      setState(() => _loading = false);
-    }
+      _habits = List<Map<String, dynamic>>.from(data);
+      _loading = false;
+    });
+  } catch (e) {
+    setState(() => _loading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Gagal mengambil data: $e')),
+    );
   }
+}
 
   Future<void> _addHabit() async {
     final name = _nameController.text;
